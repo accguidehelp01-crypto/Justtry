@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragon vs Tiger AI Predictor PRO</title>
+    <style>
+        /* CSS DESIGN */
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; text-align: center; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: rgba(0,0,0,0.8); padding: 25px; border-radius: 20px; border: 2px solid gold; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+        h1 { color: gold; text-shadow: 2px 2px 4px #000; margin-bottom: 10px; }
+        .status-bar { background: #222; padding: 10px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; color: #aaa; }
+        #prediction-box { background: #333; padding: 20px; border-radius: 15px; margin: 20px 0; border-left: 5px solid gold; border-right: 5px solid gold; }
+        #next-bet { font-size: 2.5rem; font-weight: bold; color: #00ff00; display: block; margin-top: 10px; }
+        .btn-group { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        button { padding: 15px 25px; font-size: 1rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; transition: 0.3s; }
+        .btn-d { background: #ff4d4d; color: white; }
+        .btn-t { background: #4d79ff; color: white; }
+        .btn-tie { background: #4caf50; color: white; }
+        .btn-reset { background: #666; color: white; margin-top: 20px; padding: 10px 20px; font-size: 0.8rem; }
+        button:hover { transform: scale(1.05); opacity: 0.9; }
+        #history-display { margin-top: 20px; font-size: 1.1rem; color: #ddd; word-wrap: break-word; }
+        .confidence { font-size: 1rem; color: gold; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>D vs T AI PREDICTOR</h1>
+    
+    <div class="status-bar" id="ml-status">Data Needed: Please enter last 3-5 results</div>
+
+    <div id="prediction-box">
+        <span>SUGGESTED NEXT BET:</span>
+        <div id="next-bet">WAITING...</div>
+        <div class="confidence" id="confidence-level">Confidence: 0%</div>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn-d" onclick="processResult('D')">DRAGON (D)</button>
+        <button class="btn-t" onclick="processResult('T')">TIGER (T)</button>
+        <button class="btn-tie" onclick="processResult('Tie')">TIE</button>
+    </div>
+
+    <div id="history-display">History: ---</div>
+
+    <button class="btn-reset" onclick="resetAll()">RESET ALL DATA</button>
+</div>
+
+<script>
+    /* JAVASCRIPT LOGIC */
+    let history = JSON.parse(localStorage.getItem('dt_data')) || [];
+
+    // Function to handle clicks
+    function processResult(res) {
+        history.push(res);
+        if (history.length > 50) history.shift(); // Max 50 storage
+        localStorage.setItem('dt_data', JSON.stringify(history));
+        updateUI();
+        analyzePattern();
+    }
+
+    function updateUI() {
+        const display = document.getElementById('history-display');
+        display.innerHTML = "History: " + history.slice(-10).join(" → ");
+        document.getElementById('ml-status').innerText = `Total Rounds Analyzed: ${history.length}`;
+    }
+
+    function analyzePattern() {
+        if (history.length < 3) return;
+
+        let prediction = "WAITING...";
+        let conf = 0;
+        const last = history[history.length - 1];
+        const secondLast = history[history.length - 2];
+
+        // 1. Advanced Trend Logic (+/- Pattern)
+        // Agar series chal rahi hai (DD or TT)
+        if (last === secondLast) {
+            prediction = last; // Trend Following
+            conf = 65;
+        } 
+        // 2. Zig-Zag Logic (D-T-D)
+        else {
+            prediction = (last === 'D') ? 'T' : 'D'; // Opposite logic
+            conf = 70;
+        }
+
+        // 3. Break the streak (Agar 4 bar same aa chuka hai)
+        let streak = 1;
+        for(let i = history.length-2; i >= 0; i--) {
+            if(history[i] === last) streak++;
+            else break;
+        }
+        if (streak >= 3) {
+            prediction = (last === 'D') ? 'T' : 'D';
+            conf = 85;
+        }
+
+        // Display results
+        const betElement = document.getElementById('next-bet');
+        betElement.innerText = (prediction === 'D') ? "DRAGON" : (prediction === 'T' ? "TIGER" : "TIE");
+        betElement.style.color = (prediction === 'D') ? "#ff4d4d" : "#4d79ff";
+        document.getElementById('confidence-level').innerText = `Confidence: ${conf}%`;
+    }
+
+    function resetAll() {
+        if(confirm("Pura data clear karein?")) {
+            history = [];
+            localStorage.removeItem('dt_data');
+            location.reload();
+        }
+    }
+
+    // Initial Load
+    if(history.length > 0) {
+        updateUI();
+        analyzePattern();
+    }
+</script>
+
+</body>
+</html>
