@@ -1,123 +1,107 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dragon vs Tiger AI Predictor PRO</title>
+    <title>DT Ultra Fast Analyzer</title>
     <style>
-        /* CSS DESIGN */
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; text-align: center; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: auto; background: rgba(0,0,0,0.8); padding: 25px; border-radius: 20px; border: 2px solid gold; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
-        h1 { color: gold; text-shadow: 2px 2px 4px #000; margin-bottom: 10px; }
-        .status-bar { background: #222; padding: 10px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; color: #aaa; }
-        #prediction-box { background: #333; padding: 20px; border-radius: 15px; margin: 20px 0; border-left: 5px solid gold; border-right: 5px solid gold; }
-        #next-bet { font-size: 2.5rem; font-weight: bold; color: #00ff00; display: block; margin-top: 10px; }
-        .btn-group { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-        button { padding: 15px 25px; font-size: 1rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; transition: 0.3s; }
-        .btn-d { background: #ff4d4d; color: white; }
-        .btn-t { background: #4d79ff; color: white; }
-        .btn-tie { background: #4caf50; color: white; }
-        .btn-reset { background: #666; color: white; margin-top: 20px; padding: 10px 20px; font-size: 0.8rem; }
-        button:hover { transform: scale(1.05); opacity: 0.9; }
-        #history-display { margin-top: 20px; font-size: 1.1rem; color: #ddd; word-wrap: break-word; }
-        .confidence { font-size: 1rem; color: gold; margin-top: 5px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; text-align: center; margin: 0; padding: 20px; }
+        .main-box { border: 2px solid #333; background: #111; padding: 20px; border-radius: 20px; max-width: 450px; margin: auto; box-shadow: 0 0 30px rgba(0,255,150,0.1); }
+        
+        /* Table Selection Buttons */
+        .table-selector { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 12px; cursor: pointer; background: #222; border: 1px solid #444; border-radius: 8px; color: #aaa; font-weight: bold; transition: 0.2s; }
+        .tab.active { background: #f39c12; color: #000; border-color: #f39c12; }
+
+        /* Input & Result Area */
+        input { background: #000; border: 2px solid #444; color: #f39c12; padding: 15px; font-size: 28px; width: 80%; text-align: center; border-radius: 10px; margin-bottom: 10px; outline: none; }
+        input:focus { border-color: #f39c12; }
+        
+        #result-box { font-size: 60px; font-weight: 900; margin: 25px 0; min-height: 80px; text-transform: uppercase; letter-spacing: 2px; }
+        .D { color: #ff4757; text-shadow: 0 0 15px rgba(255,71,87,0.6); }
+        .T { color: #2e86de; text-shadow: 0 0 15px rgba(46,134,222,0.6); }
+        .Tie { color: #2ed573; }
+
+        /* Voice Button */
+        .voice-btn { background: #f39c12; border: none; padding: 10px 20px; border-radius: 50px; cursor: pointer; font-weight: bold; margin-bottom: 15px; }
+        .listening { background: #ff4757; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>D vs T AI PREDICTOR</h1>
-    
-    <div class="status-bar" id="ml-status">Data Needed: Please enter last 3-5 results</div>
-
-    <div id="prediction-box">
-        <span>SUGGESTED NEXT BET:</span>
-        <div id="next-bet">WAITING...</div>
-        <div class="confidence" id="confidence-level">Confidence: 0%</div>
+<div class="main-box">
+    <div class="table-selector">
+        <div id="tab1" class="tab active" onclick="switchTable(1)">TABLE 1<br>(50/50)</div>
+        <div id="tab2" class="tab" onclick="switchTable(2)">TABLE 2<br>(64%)</div>
+        <div id="tab3" class="tab" onclick="switchTable(3)">TABLE 3<br>(70%)</div>
     </div>
 
-    <div class="btn-group">
-        <button class="btn-d" onclick="processResult('D')">DRAGON (D)</button>
-        <button class="btn-t" onclick="processResult('T')">TIGER (T)</button>
-        <button class="btn-tie" onclick="processResult('Tie')">TIE</button>
+    <button class="voice-btn" id="voiceBtn" onclick="startVoice()">🎤 BOL KAR BATAO</button>
+
+    <div>
+        <input type="number" id="roundInput" placeholder="ROUND NO." oninput="showResult()">
     </div>
 
-    <div id="history-display">History: ---</div>
-
-    <button class="btn-reset" onclick="resetAll()">RESET ALL DATA</button>
+    <div id="result-box">--</div>
+    <div id="status" style="color: #666;">Waiting for Table & Round...</div>
 </div>
 
 <script>
-    /* JAVASCRIPT LOGIC */
-    let history = JSON.parse(localStorage.getItem('dt_data')) || [];
+    // Exact Data based on your 3 Screenshots (Sampled for 70 rounds)
+    const data = {
+        1: ["T","D","D","D","T","T","D","T","T","D","T","D","T","T","T","D","D","T","D","D","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T"],
+        2: ["D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","Tie","D","D","T","T","T","T","T","D","T","D","T","D","D","T","D","T","T","T","T","T","D","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T"],
+        3: ["T","T","T","T","D","T","T","T","T","D","D","T","D","T","T","T","T","T","D","D","Tie","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","T","D","D","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T","T"]
+    };
 
-    // Function to handle clicks
-    function processResult(res) {
-        history.push(res);
-        if (history.length > 50) history.shift(); // Max 50 storage
-        localStorage.setItem('dt_data', JSON.stringify(history));
-        updateUI();
-        analyzePattern();
+    let activeTable = 1;
+
+    function switchTable(n) {
+        activeTable = n;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab' + n).classList.add('active');
+        showResult();
     }
 
-    function updateUI() {
-        const display = document.getElementById('history-display');
-        display.innerHTML = "History: " + history.slice(-10).join(" → ");
-        document.getElementById('ml-status').innerText = `Total Rounds Analyzed: ${history.length}`;
-    }
+    function showResult() {
+        const round = document.getElementById('roundInput').value;
+        const resBox = document.getElementById('result-box');
+        const status = document.getElementById('status');
 
-    function analyzePattern() {
-        if (history.length < 3) return;
-
-        let prediction = "WAITING...";
-        let conf = 0;
-        const last = history[history.length - 1];
-        const secondLast = history[history.length - 2];
-
-        // 1. Advanced Trend Logic (+/- Pattern)
-        // Agar series chal rahi hai (DD or TT)
-        if (last === secondLast) {
-            prediction = last; // Trend Following
-            conf = 65;
-        } 
-        // 2. Zig-Zag Logic (D-T-D)
-        else {
-            prediction = (last === 'D') ? 'T' : 'D'; // Opposite logic
-            conf = 70;
-        }
-
-        // 3. Break the streak (Agar 4 bar same aa chuka hai)
-        let streak = 1;
-        for(let i = history.length-2; i >= 0; i--) {
-            if(history[i] === last) streak++;
-            else break;
-        }
-        if (streak >= 3) {
-            prediction = (last === 'D') ? 'T' : 'D';
-            conf = 85;
-        }
-
-        // Display results
-        const betElement = document.getElementById('next-bet');
-        betElement.innerText = (prediction === 'D') ? "DRAGON" : (prediction === 'T' ? "TIGER" : "TIE");
-        betElement.style.color = (prediction === 'D') ? "#ff4d4d" : "#4d79ff";
-        document.getElementById('confidence-level').innerText = `Confidence: ${conf}%`;
-    }
-
-    function resetAll() {
-        if(confirm("Pura data clear karein?")) {
-            history = [];
-            localStorage.removeItem('dt_data');
-            location.reload();
+        if(round >= 1 && round <= 70) {
+            const res = data[activeTable][round - 1];
+            resBox.innerText = res === "D" ? "DRAGON" : (res === "T" ? "TIGER" : "TIE");
+            resBox.className = res;
+            status.innerText = `Table ${activeTable} | Round ${round} Loaded`;
+        } else {
+            resBox.innerText = "--";
+            resBox.className = "";
+            status.innerText = "Enter 1-70 only";
         }
     }
 
-    // Initial Load
-    if(history.length > 0) {
-        updateUI();
-        analyzePattern();
+    // Voice Feature
+    function startVoice() {
+        const btn = document.getElementById('voiceBtn');
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => { btn.classList.add('listening'); btn.innerText = "LISTENING..."; };
+        recognition.onend = () => { btn.classList.remove('listening'); btn.innerText = "🎤 BOL KAR BATAO"; };
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            const number = transcript.replace(/[^0-9]/g, '');
+            if(number) {
+                document.getElementById('roundInput').value = number;
+                showResult();
+            }
+        };
+        recognition.start();
     }
 </script>
 
 </body>
 </html>
+￼Enter
